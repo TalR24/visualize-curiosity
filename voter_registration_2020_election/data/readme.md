@@ -1,6 +1,9 @@
 Voter registration data was collected from the following sources:
+
 [Pennsylvania](https://www.dos.pa.gov/VotingElections/OtherServicesEvents/VotingElectionStatistics/Pages/Voter-Registration-Statistics-Archives.aspx)
+
 [Florida](https://dos.myflorida.com/elections/data-statistics/voter-registration-statistics/voter-registration-reportsxlsx/)
+
 [North Carolina](https://www.ncsbe.gov/results-data/voter-registration-data)
 
 Charts seen in this post were made in R using the ggplot2, tidyverse, readxl, RColorBrewer, and Cairo packages.
