@@ -43,7 +43,7 @@ ggsave("charts/emp_stocks.png")
 
 
 ## Read in ATUS 2019 and 2020 data - respondent file merged with activity summary file
-## I manually merged the two files based on tucaseid variable, generated yearmth date variable from tuyear, tumonth
+## I manually merged the two files based on tucaseid variable (all tulineno=1), generated yearmth date variable from tuyear, tumonth
 atus_19 <- read_excel("data/clean_atus-2019.xlsx", col_names = TRUE)
 atus_19 <- atus_19 %>%
   mutate(dataset="2019")
@@ -52,11 +52,18 @@ atus_20 <- atus_20 %>%
   mutate(dataset="2020")
 
 # clean the data
-atus <- atus %>%
+atus_19 <- atus_19 %>%
   # only employed people - since we need to pull income
-  filter(telfs==1 | telfs==2) %>%
-  # create yearly income by multiplying weekly earn * weeks worked
-  mutate(income = teern*teernwkp)
+  filter(telfs=="Employed - at work" | telfs=="Employed - absent") %>%
+  # drop those still without income information
+  filter(teern!=-1 | teernh1o!=-1 | teernh2!=-1) %>%
+  # drop those who have no weeks worked and no hours worked information
+  filter(teernwkp!=-1 | teernhro!=-1) %>%
+  # create yearly income by multiplying weekly earn * weeks worked if earnings are reported weekly basis
+  # hourly earn * hours worked * weeks worked if earnings reported on hourly basis
+  mutate(income = case_when(teern>-1 ~ teern*teernwkp, 
+            (teern==-1 & teernh1o>-1) ~ teernh1o*teernhro*teernwkp,
+            (teern==-1 & teernh1o==-1 & teernh2>-1) ~ teernh2*teernhro*teernwkp))
 
 # need to replace x/y/z with the activities I want to summarize here
 atus_sum <- atus %>%
@@ -64,3 +71,8 @@ atus_sum <- atus %>%
 
 # I should probably hold off on combining the datasets until they're cleaned and smaller
 atus_19_20 <- rbind(atus_19, atus_20)
+
+
+## Chart of income distributions in 2019 and 2020, overlayed
+## Let's compare the income distributions of each year's sample, see if it shifted during COVID pandemic
+# note: total weekly earnings censored after 288,461; total hourly earnings censored after 9999
