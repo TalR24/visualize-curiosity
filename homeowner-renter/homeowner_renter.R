@@ -1,7 +1,7 @@
 ## homeowner-renter.R
-## Visualize trends in homeowners and renters in the US over time
+## Visualize IPUMS CPS ASEC data on homeowners and renters in the U.S. over time
 ## Requires: cps_00013.xml
-## Last edited by Tal Roded, 5/9/22
+## Last edited by Tal Roded, 5/11/22
 ######################################
 library(tidyverse)
 library(readxl)
@@ -12,6 +12,5 @@ library(ipumsr)
 setwd("C:/Users/trode/OneDrive/Desktop/VisualizeCuriosity/visualize-curiosity/homeowner-renter")
 
 # read in data
-ddi <- read_ipums_ddi("cps_00013.xml")
+ddi <- read_ipums_ddi("data/cps_00013.xml")
 data <- read_ipums_micro(ddi)
-
