@@ -17,9 +17,11 @@ setwd("C:/Users/trode/OneDrive/Desktop/VisualizeCuriosity/visualize-curiosity/ho
 ddi <- read_ipums_ddi("data/cps_00013.xml")
 data <- read_ipums_micro(ddi)
 
-genders <- data %>%
+cleaned_data <- data %>%
   # keep just homeowners and renters respondents
-  filter(PERNUM==1 & !(is.na(OWNERSHP)) & OWNERSHP!=21) %>%
+  filter(PERNUM==1 & !(is.na(OWNERSHP)) & OWNERSHP!=21)
+
+genders <- cleaned_data %>%
   group_by(YEAR, OWNERSHP) %>%
   # total count, counts by gender and race
   summarise(count = n(), n_male=sum(SEX==1)) %>%
@@ -28,9 +30,7 @@ genders <- data %>%
 genders$OWNERSHP <- as.character(genders$OWNERSHP)
 genders$YEAR <- as.character(genders$YEAR)
 
-races <- data %>%
-  # keep just homeowners and renters respondents
-  filter(PERNUM==1 & !(is.na(OWNERSHP)) & OWNERSHP!=21) %>%
+races <- cleaned_data %>%
   group_by(YEAR, OWNERSHP, RACE) %>%
   summarise(count=n()) %>%
   group_by(YEAR, RACE) %>%
@@ -43,39 +43,63 @@ races$YEAR <- as.numeric(races$YEAR)
 races$RACE <- as.character(races$RACE)
 
 
-## how has the proportion of homeowners and renters changed over time?
-ggplot(no_missing) + geom_line(aes(x=YEAR, y=prop, group=OWNERSHP))
-
 # gender ratio of homeowners and renters over time
 g <- ggplot(genders, aes(x=YEAR, y=male_prop, group=OWNERSHP, fill=OWNERSHP)) + geom_bar(position="dodge", stat="identity") + 
-  geom_text(aes(label = paste0(round(male_prop), "%")), color="black", vjust=1.5, position=position_dodge(0.9), size=5) + 
-  theme_fivethirtyeight() + theme(axis.text = element_text(size=13)) + 
-  labs(title="Gender Ratio of Homeowners and Renters", y=NA) + 
-  theme(legend.position="top", legend.title=element_blank(), legend.text=element_text(size=14)) + 
+  geom_text(aes(label = paste0(round(male_prop), "%")), color="black", vjust=1.5, position=position_dodge(0.9), size=8) + 
+  theme_fivethirtyeight() + theme(axis.text.x = element_text(size=24), 
+                                  axis.text.y = element_blank()) + 
+  labs(title="Male Ratio of Homeowners and Renters", y=NA) + 
+  theme(legend.position="top", legend.title=element_blank(), legend.text=element_text(size=28)) + 
   theme(legend.margin = margin(0,0,0,0), legend.box.margin = margin(-2, -2, -2, -2)) +
   theme(legend.background = element_blank(), legend.key = element_blank()) + 
   theme(panel.border = element_rect(color="black", fill=NA, size=1, linetype="solid")) + 
-  theme(plot.title = element_text(face = "bold", size = 20, hjust = 0.5)) +
-  scale_fill_manual(values=c("#FF6F59", "#61D095")) + 
-  scale_y_continuous(limits=c(0,100))
+  theme(plot.title = element_text(face = "bold", size = 32, hjust = 0.5)) +
+  scale_fill_manual(values=c("#FF6F59", "#61D095"), 
+                    labels=c("Homeowners", "Renters")) + 
+  scale_y_continuous(limits=c(0,85), breaks=seq(0,85,20))
 g
+ggsave(plot=g, "charts/gender_ratio.png", width=16, height=12)
+
 
 # race ratio of homeowners and renters over time
-r <- ggplot(races, aes(x=YEAR, y=prop, color=RACE, linetype=OWNERSHP)) + geom_line() +  
-  theme_fivethirtyeight() + theme(axis.text = element_text(size=13)) + 
-  labs(title="Race Ratios of Homeowners and Renters", y=NA) + 
-  theme(legend.position="top", legend.title=element_blank(), legend.text=element_text(size=14)) + 
+# race ratio of homeowners and renters over time
+races_home <- races %>%
+  filter(OWNERSHP==10) %>%
+  filter(YEAR!=2019 & YEAR!=2020)
+r <- ggplot(races_home, aes(x=YEAR, y=prop, fill=RACE)) + 
+  geom_bar(position="dodge", stat="identity", width=6) + 
+  geom_text(aes(label = paste0(round(prop), "%")), color="black", vjust=1.5, position=position_dodge(6), size=7) + 
+  theme_fivethirtyeight() + theme(axis.text = element_text(size=24), 
+                                  axis.text.y = element_blank()) + 
+  labs(title="Race Ratios of Homeowners", y=NA) +
+  theme(legend.position="bottom", legend.title=element_blank(), legend.text=element_text(size=28)) + 
   theme(legend.margin = margin(0,0,0,0), legend.box.margin = margin(-2, -2, -2, -2)) +
   theme(legend.background = element_blank(), legend.key = element_blank()) + 
   theme(panel.border = element_rect(color="black", fill=NA, size=1, linetype="solid")) + 
-  theme(plot.title = element_text(face = "bold", size = 20, hjust = 0.5)) +
-  scale_y_continuous(limits=c(0,100))
+  theme(plot.title = element_text(face = "bold", size = 32, hjust = 0.5)) +
+  scale_fill_manual(values=c("#CC4BC2", "#FC7A57", "#FCD757"), 
+                    labels=c("White", "Black", "Asian"))
 r
 
+races_rent <- races %>%
+  filter(OWNERSHP==22) %>%
+  filter(YEAR!=2019 & YEAR!=2020)
+r2 <- ggplot(races_rent, aes(x=YEAR, y=prop, fill=RACE)) + 
+  geom_bar(position="dodge", stat="identity", width=6) + 
+  geom_text(aes(label = paste0(round(prop), "%")), color="black", vjust=1.5, position=position_dodge(6), size=7) + 
+  theme_fivethirtyeight() + theme(axis.text.x = element_text(size=24), 
+                                  axis.text.y = element_blank()) + 
+  labs(title="Race Ratios of Renters", y=NA) +
+  theme(legend.position="none") +
+  theme(panel.border = element_rect(color="black", fill=NA, size=1, linetype="solid")) + 
+  theme(plot.title = element_text(face = "bold", size = 32, hjust = 0.5)) +
+  scale_fill_manual(values=c("#CC4BC2", "#FC7A57", "#FCD757"))
+r2
 # put together several of the demographic trends charts
-ggarrange(g, r,
+r_both <- ggarrange(r, r2,
           ncol = 1, nrow = 2)
-
+r_both
+ggsave(plot=r_both, "charts/race_ratios.png", width=18, height=16)
 
 
 
