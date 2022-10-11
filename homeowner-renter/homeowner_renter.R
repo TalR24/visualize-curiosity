@@ -1,7 +1,7 @@
 ## homeowner-renter.R
 ## Visualize IPUMS CPS ASEC data on homeowners and renters in the U.S. over time
 ## Requires: cps_00013.xml
-## Last edited by Tal Roded, 5/12/22
+## Last edited by Tal Roded, 10/11/22
 ######################################
 library(tidyverse)
 library(ggthemes) # for fivethirtyeight theme
@@ -21,6 +21,10 @@ cleaned_data <- data %>%
   # keep just homeowners and renters respondents
   filter(PERNUM==1 & !(is.na(OWNERSHP)) & OWNERSHP!=21)
 
+###########################################
+## Dimensions of ownership status over time
+###########################################
+## How does homeownership compare by gender?
 genders <- cleaned_data %>%
   group_by(YEAR, OWNERSHP) %>%
   # total count, counts by gender and race
@@ -29,21 +33,6 @@ genders <- cleaned_data %>%
 
 genders$OWNERSHP <- as.character(genders$OWNERSHP)
 genders$YEAR <- as.character(genders$YEAR)
-
-races <- cleaned_data %>%
-  group_by(YEAR, OWNERSHP, RACE) %>%
-  summarise(count=n()) %>%
-  group_by(YEAR, RACE) %>%
-  mutate(yr_owner_total = sum(count), prop=100*count/yr_owner_total) %>%
-  # select several groups of interest - white, black, asian
-  filter(RACE==100 | RACE==200 | RACE==651)
-
-races$OWNERSHP <- as.character(races$OWNERSHP)
-races$YEAR <- as.numeric(races$YEAR)
-races$RACE <- as.character(races$RACE)
-
-
-# gender ratio of homeowners and renters over time
 g <- ggplot(genders, aes(x=YEAR, y=male_prop, group=OWNERSHP, fill=OWNERSHP)) + geom_bar(position="dodge", stat="identity") + 
   geom_text(aes(label = paste0(round(male_prop), "%")), color="black", vjust=1.5, position=position_dodge(0.9), size=8) + 
   theme_fivethirtyeight() + theme(axis.text.x = element_text(size=24), 
@@ -61,8 +50,19 @@ g
 ggsave(plot=g, "charts/gender_ratio.png", width=16, height=12)
 
 
-# race ratio of homeowners and renters over time
-# race ratio of homeowners and renters over time
+## How does ownership compare by race?
+races <- cleaned_data %>%
+  group_by(YEAR, OWNERSHP, RACE) %>%
+  summarise(count=n()) %>%
+  group_by(YEAR, RACE) %>%
+  mutate(yr_owner_total = sum(count), prop=100*count/yr_owner_total) %>%
+  # select several groups of interest - white, black, asian
+  filter(RACE==100 | RACE==200 | RACE==651)
+
+races$OWNERSHP <- as.character(races$OWNERSHP)
+races$YEAR <- as.numeric(races$YEAR)
+races$RACE <- as.character(races$RACE)
+
 races_home <- races %>%
   filter(OWNERSHP==10) %>%
   filter(YEAR!=2019 & YEAR!=2020)
@@ -173,6 +173,8 @@ incomes$YEAR <- as.character(incomes$YEAR)
 ggplot(incomes, aes(x=YEAR, y=inc_growth, group=OWNERSHP, fill=OWNERSHP)) + 
   geom_bar(position="dodge", stat="identity", width=0.5)
 
-
-
+###########################################
+## Effects of ownership trends
+###########################################
+## What proportion of homeowners are also on food stamps?
 
